@@ -25,6 +25,7 @@ public class UserEntry {
     private String password;
     @DBRef//will link JE to user
     private List<JournalEntry> journalEntries=new ArrayList<>();
+
     private List<String> roles=new ArrayList<>();
 
 }

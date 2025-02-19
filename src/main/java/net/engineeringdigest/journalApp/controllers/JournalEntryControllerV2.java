@@ -16,11 +16,14 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
-
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -33,30 +36,51 @@ public class JournalEntryControllerV2 {
    @Autowired
     UserServices userServices;
 
-    @GetMapping("/get/{userName}")
-    public ResponseEntity<List<JournalEntry>> getAllJournalEntriesOfUser(@PathVariable String userName){
+   //*******OLD IMPEMENTATION WITHOUT SECURITY*********
+//    @GetMapping("/get")
+//    public ResponseEntity<List<JournalEntry>> getAllJournalEntriesOfUser(){
+//        UserEntry user=userServices.findByUserName(userName);
+//        List<JournalEntry> all=user.getJournalEntries();
+//        if(all!=null && !all.isEmpty()){
+//            return new ResponseEntity<>(all,HttpStatus.OK);
+//        }
+//        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+//    }
+//********OLD IMPEMENTATION WITHOUT SECURITY**********
+
+   @GetMapping("/get")
+    public ResponseEntity<List<JournalEntry>> getAllJournalEntriesOfUser(){
+        Authentication authentication= SecurityContextHolder.getContext().getAuthentication();//after user login his details are saved in securityContextholder
+        String userName=authentication.getName();
         UserEntry user=userServices.findByUserName(userName);
         List<JournalEntry> all=user.getJournalEntries();
         if(all!=null && !all.isEmpty()){
             return new ResponseEntity<>(all,HttpStatus.OK);
         }
-//        journalEntry.setDate(LocalDateTime.now());
-//         JES.getAll(journalEntry);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+
+
+//***old Method
+//    @PostMapping("/post/{userName}")
+//    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry JE,@PathVariable String userName){
+//        try {
+//            Authentication authentication= SecurityContextHolder.getContext().getAuthentication();//after user login his details are saved in securityContextholder
+//            String userName=authentication.getName();
+//            JES.saveEntry(JE,userName);
+//            return new ResponseEntity<>(JE,HttpStatus.CREATED);
+//        }
+//        catch (Exception e){
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+//    }
+
     @PostMapping("/post")
-    public ResponseEntity<JournalEntry> addEntry(@RequestBody JournalEntry JE){
+    public ResponseEntity<JournalEntry> createJournalEntryForUser(@RequestBody JournalEntry JE){
         try {
-            JES.save(JE);
-            return new ResponseEntity<>(JE,HttpStatus.CREATED);
-        }
-        catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
-    @PostMapping("/post/{userName}")
-    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry JE, @PathVariable String userName){
-        try {
+            Authentication authentication= SecurityContextHolder.getContext().getAuthentication();//after user login his details are saved in securityContextholder
+            String userName=authentication.getName();
                 JES.saveEntry(JE,userName);
                 return new ResponseEntity<>(JE,HttpStatus.CREATED);
         }
@@ -64,37 +88,75 @@ public class JournalEntryControllerV2 {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+//    @GetMapping("get/{myid}")
+//    public ResponseEntity<Optional<JournalEntry>> getid(@PathVariable ObjectId myid){
+//        try {
+//            Optional<JournalEntry> responseEntry=JES.findbyId(myid);
+//            return new ResponseEntity<>(responseEntry,HttpStatus.OK);
+//        }
+//        catch (Exception e){
+//            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+//        }
+//    }
     @GetMapping("get/{myid}")
     public ResponseEntity<Optional<JournalEntry>> getid(@PathVariable ObjectId myid){
-//        JES.findbyId(myid).orElse(null);
         try {
-            Optional<JournalEntry> responseEntry=JES.findbyId(myid);
-            return new ResponseEntity<>(responseEntry,HttpStatus.OK);
+            Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
+            String userName=authentication.getName();
+            UserEntry user=userServices.findByUserName(userName);
+            List<JournalEntry> journalEntryList=user.getJournalEntries().stream().filter(x->x.getId().equals(myid)).collect(Collectors.toList());
+            if(!journalEntryList.isEmpty()){
+                Optional<JournalEntry> responseEntry=JES.findbyId(myid);
+                return new ResponseEntity<>(responseEntry,HttpStatus.OK);
+            }
         }
         catch (Exception e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+//    @PutMapping("put/{oldid}")
+//    public ResponseEntity<?> putid(@PathVariable ObjectId oldid, @RequestBody JournalEntry JE){
+////        return JES.putId(oldid,JE);
+//        try {
+//            Object obj=JES.putId(oldid,JE);
+//            if(obj==null){
+//                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+//            }
+//            return new ResponseEntity<>(obj,HttpStatus.OK);
+//        }
+//        catch (Exception e){
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+//    }
     @PutMapping("put/{oldid}")
-    public ResponseEntity<?> putid(@PathVariable ObjectId oldid, @RequestBody JournalEntry JE){
+    public ResponseEntity<?> updateJournalEntryOfUser(@PathVariable ObjectId oldid, @RequestBody JournalEntry JE){
 //        return JES.putId(oldid,JE);
         try {
-            Object obj=JES.putId(oldid,JE);
-            if(obj==null){
+            Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
+            String userName=authentication.getName();
+            UserEntry user=userServices.findByUserName(userName);
+            List<JournalEntry> journalEntryList=user.getJournalEntries();
+            boolean update=JES.updateJournalEntryOfUser(journalEntryList,JE,oldid);
+            if(update){
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(obj,HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-    @DeleteMapping("delete/{userName}/{id}")
-    public ResponseEntity<?> deleteid(@PathVariable String userName , @PathVariable ObjectId id){
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<?> deleteJournalEntryOfUserById( @PathVariable ObjectId id){
+       boolean removed=false;
         //ResponseEntity<?> this ? is called wildcard pattern. Means now u can return your custom response if new
         try {
-            if(JES.findbyId(id)!=null){
-                JES.deleteByID(id,userName);
+            Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
+            String userName=authentication.getName();
+            UserEntry user=userServices.findByUserName(userName);
+            if(JES.findbyId(id).isPresent()){
+                JES.deleteByID(id,userName,user);
                 return new ResponseEntity<>(HttpStatus.OK);
             }
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);

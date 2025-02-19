@@ -67,10 +67,21 @@ public class JournalEntryServices {
         }
         return journalEntryOfOldID;
     }
-    public void deleteByID(ObjectId id, String userName){
-        UserEntry user=userServices.findByUserName(userName);
+    public void deleteByID(ObjectId id, String userName,UserEntry user){
         user.getJournalEntries().removeIf(x->x.getId().equals(id));
         userServices.saveEntry(user);
         JERepository.deleteById(id);
+    }
+
+    public boolean updateJournalEntryOfUser(List<JournalEntry> journalEntryList, JournalEntry je, ObjectId oldId) {
+        return journalEntryList.stream()
+                .filter(entry -> entry.getId().equals(oldId))
+                .findFirst()
+                .map(entry -> {
+                    int index = journalEntryList.indexOf(entry);
+                    journalEntryList.set(index, je);
+                    return true;
+                })
+                .orElse(false);
     }
 }
