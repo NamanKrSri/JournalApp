@@ -32,7 +32,7 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());//this .passwordEncoder(...) is telling spring security to use BCrypt.... encryption and decrption method in verifying the password
     }
     private PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();

@@ -24,6 +24,7 @@ public class PublicController {
 
     @PostMapping
     void createUser(@RequestBody UserEntry user){
+
         userServices.saveNewUser(user);
     }
     @PostMapping("/post")//this is public JE to be added not specific for user

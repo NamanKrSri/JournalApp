@@ -98,7 +98,7 @@ public class JournalEntryControllerV2 {
 //            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 //        }
 //    }
-    @GetMapping("get/{myid}")
+    @GetMapping("get/{myid}")//Obtain specific JE of user with the help of ID of that specific JE.
     public ResponseEntity<Optional<JournalEntry>> getid(@PathVariable ObjectId myid){
         try {
             Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
@@ -139,7 +139,7 @@ public class JournalEntryControllerV2 {
             List<JournalEntry> journalEntryList=user.getJournalEntries();
             boolean update=JES.updateJournalEntryOfUser(journalEntryList,JE,oldid);
             if(update){
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(HttpStatus.OK);
             }
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

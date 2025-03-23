@@ -67,21 +67,33 @@ public class JournalEntryServices {
         }
         return journalEntryOfOldID;
     }
+    @Transactional//since if any process fails at middle who process will terminate
     public void deleteByID(ObjectId id, String userName,UserEntry user){
-        user.getJournalEntries().removeIf(x->x.getId().equals(id));
-        userServices.saveEntry(user);
-        JERepository.deleteById(id);
+        try{
+            boolean removed=user.getJournalEntries().removeIf(x->x.getId().equals(id));
+            if(removed){
+                userServices.saveEntry(user);
+                JERepository.deleteById(id);
+            }
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            throw new RuntimeException("AN error occured since u tried deleting other id",e);
+        }
     }
 
     public boolean updateJournalEntryOfUser(List<JournalEntry> journalEntryList, JournalEntry je, ObjectId oldId) {
-        return journalEntryList.stream()
-                .filter(entry -> entry.getId().equals(oldId))
-                .findFirst()
-                .map(entry -> {
-                    int index = journalEntryList.indexOf(entry);
-                    journalEntryList.set(index, je);
-                    return true;
-                })
-                .orElse(false);
+        for(JournalEntry journalEntry:journalEntryList){
+            if(journalEntry.getId().equals(oldId)){
+                if (je.getTitle() != null) {
+                    journalEntry.setTitle(je.getTitle());
+                }
+                if (je.getContent() != null) {
+                    journalEntry.setContent(je.getContent());
+                }
+                JERepository.save(journalEntry);
+                return true;
+            }
+        }
+        return false;
     }
 }
