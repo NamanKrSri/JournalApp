@@ -24,6 +24,7 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity httpSecurity)throws Exception{
              httpSecurity.authorizeRequests()
                      .antMatchers("/Journal/**","/User/**").authenticated()
+                     .antMatchers("/admin/**").hasRole("Admin")//in userDetailsService u were sending role also so that was user here in authentication
                      .anyRequest().permitAll()
                      .and()
                      .httpBasic();

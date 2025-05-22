@@ -22,7 +22,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             UserDetails userDetails=User.builder()
                     .username(user.getUserName())
                     .password(user.getPassword())
-                    .roles(user.getRoles().toArray(new String[0]))
+                    .roles(user.getRoles().toArray(new String[0]))//see here u are sending complete info of the user to Spring Security.Means now authentication
+                    //builder can also target for target for specific role
                     .build();
         return userDetails;
         }
